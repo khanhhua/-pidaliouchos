@@ -11,6 +11,7 @@ data Monitor = Monitor
   }
 data Task = SimpleTask String
 
+
 defaultMonitor :: IO Monitor
 defaultMonitor = do
   empty <- newMVar []
@@ -20,3 +21,4 @@ defaultMonitor = do
 simple :: String -> Task
 simple =
   SimpleTask
+

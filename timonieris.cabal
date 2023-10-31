@@ -27,6 +27,7 @@ executable timonieris
     -- Modules included in this executable, other than Main.
     other-modules:
         Data.Timonieris
+      , Actions
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    
@@ -34,6 +35,7 @@ executable timonieris
       , bytestring ^>=0.12.0.2	
       , process ^>=1.6.18.0
       , directory ^>=1.3.8.1
+      , transformers ^>=0.6.1.1
     hs-source-dirs:   app
     default-language: Haskell2010
     default-extensions:
