@@ -11,6 +11,7 @@ import Control.Concurrent
     , readMVar
     )
 import Control.Monad ( mapM_ )
+import System.Directory ( getCurrentDirectory )
 import System.Exit ( ExitCode(..) )
 import System.Process ( spawnProcess, waitForProcess )
 import Data.List ( singleton )
@@ -51,10 +52,13 @@ wait (Monitor{..}) = do
 
 
 loadTasks :: IO [Task]
-loadTasks = pure [ simple "/Users/khanhhua/dev/timonieris/tasks/dummy.sh"
-                 , simple "/Users/khanhhua/dev/timonieris/tasks/dummy-err.sh"
-                 ]
-
+loadTasks =
+  (\cwd -> (simple . (cwd <>)) <$> executables) <$> getCurrentDirectory 
+  where
+    executables =
+      [ "/tasks/dummy.sh"
+      , "/tasks/dummy-err.sh"
+      ] 
 
 runTask :: Monitor -> Task -> IO ()
 runTask monitor (SimpleTask executable) = do
