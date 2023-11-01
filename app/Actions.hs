@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use list literal pattern" #-}
 module Actions ( loadTasks, startMonitor ) where
 
 import Control.Concurrent
@@ -26,25 +28,19 @@ import Data.Timonieris
     , Monitor(..)
     , defaultMonitor
     , simple
+    , parameterized
+    , block
     )
 
 type TaskT = ReaderT Monitor IO Task
 
 
 loadTasks :: IO [Task]
-loadTasks =
-  (\cwd -> simple . ((cwd <> "/") <>) <$> executables) <$> getCurrentDirectory
-  where
-    executables =
-      [ "tasks/dummy.sh"
-      , "tasks/dummy.sh"
-      , "tasks/dummy-err.sh"
-      , "tasks/dummy-err.sh"
-      , "tasks/dummy-err.sh"
-      , "tasks/dummy-err.sh"
-      , "tasks/dummy-err.sh"
-      ]
-
+loadTasks = do
+  cwd <- getCurrentDirectory
+  let timofile = cwd <> "/examples/multiseq.timo"
+  content <- lines <$> readFile timofile
+  pure $ parseTimo cwd content      
 
 startMonitor :: [Task] -> IO ()
 startMonitor tasks = do
@@ -79,19 +75,37 @@ fromCwdPath executablePath = do
 
 
 runTask :: Monitor -> Task -> IO ()
-runTask monitor (SimpleTask executable) = do
+runTask monitor task0 = do
   (taskId, handle) <- createTaskId monitor
-  threadId <- forkIO $ worker (taskId, handle)
+  threadId <- forkIO $ worker taskId task0
+  
   watch (taskId, threadId, handle) monitor
+
   where
-    worker (taskId, handle) = do
-      processHandle <- spawnProcess executable []
-      exitCode <- waitForProcess processHandle
-      case exitCode of
-        ExitSuccess -> success taskId monitor
-        ExitFailure code -> do
-          putStrLn "Task crashed. Respawning..."
-          worker (taskId, handle)
+    spawnTask task = do
+      case task of
+        SimpleTask executable -> spawnProcess executable [] >>= waitForProcess
+        ParameterizedTask executable params -> spawnProcess executable params >>= waitForProcess
+        _ -> error "Bad task"
+
+    worker taskId task0 =
+      case task0 of
+        BlockTask task next -> do
+          subtaskExitCode <- spawnTask task
+          case subtaskExitCode of
+            ExitSuccess -> worker taskId next
+            ExitFailure code -> do
+              putStrLn "Subtask crashed. Respawning"
+              worker taskId task0
+          -- 
+        _ -> do
+          exitCode <- spawnTask task0
+          case exitCode of
+            ExitSuccess -> success taskId monitor
+            ExitFailure code -> do
+              putStrLn "Task crashed. Respawning"
+              worker taskId task0
+
 
 watch :: (Integer, ThreadId, MVar ()) -> Monitor -> IO ()
 watch (taskId, threadId, handle) (Monitor{..}) = do
@@ -119,3 +133,30 @@ success taskId (Monitor{..}) = do
   vTasks <- readMVar tasks
   let (_, _, handle) = head $ filter (\(t, _, _) -> t == taskId) vTasks
   putMVar handle ()
+
+
+parseTimo cwd content =
+  foldr (\tasks acc ->
+    case tasks of
+      [task] -> task : acc
+      _ -> block tasks : acc
+    ) [] singleTasks
+  where
+    singleTasks = foldr (\line acc ->
+      if line == "" then [] : acc
+      else
+        let task = parseLine (cwd <> "/" <> line) 
+            xs = if null acc
+                  then []
+                  else head acc
+        in case acc of
+          [] -> [ task : xs ]
+          _  -> ( task : xs ) : tail acc
+      ) [] content
+
+
+parseLine line =
+  case words line of
+    executable : [] -> simple executable
+    executable : params -> parameterized executable params
+    _ -> error "Nah you are on crack"
