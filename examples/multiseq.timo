@@ -1,8 +1,8 @@
-tasks/dummy.sh
-tasks/dummy-seq-1.sh
-tasks/dummy-err.sh
-tasks/dummy-seq-2.sh
+./tasks/dummy.sh
+./tasks/dummy-seq-1.sh
+./tasks/dummy-err.sh
+./tasks/dummy-seq-2.sh
 
-tasks/dummy.sh
-tasks/dummy-seq-1.sh
-tasks/dummy-seq-2.sh
+./tasks/dummy.sh
+./tasks/dummy-seq-1.sh
+./tasks/dummy-seq-2.sh
