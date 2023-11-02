@@ -8,8 +8,6 @@ main :: IO ()
 main =
   resolveTimofile >>= loadTasks >>= startMonitor
 
---  loadTasks (cwd <> "/examples/multiseq.timo") >>= startMonitor
-
 resolveTimofile :: IO FilePath
 resolveTimofile = do
   args <- getArgs
