@@ -1,9 +1,20 @@
 module Main where
 
 import Actions (loadTasks, startMonitor)
-import System.Directory (getCurrentDirectory)
+import System.Directory (getCurrentDirectory, getHomeDirectory)
+import System.Environment (getArgs)
 
 main :: IO ()
-main = do
-  cwd <- getCurrentDirectory
-  loadTasks (cwd <> "/examples/multiseq.timo") >>= startMonitor
+main =
+  resolveTimofile >>= loadTasks >>= startMonitor
+
+--  loadTasks (cwd <> "/examples/multiseq.timo") >>= startMonitor
+
+resolveTimofile :: IO FilePath
+resolveTimofile = do
+  args <- getArgs
+  case args of
+    [timofile] -> (\cwd -> cwd <> "/" <> timofile) <$> getCurrentDirectory
+    [] -> do
+      home <- getHomeDirectory
+      pure $ home <> "/.timonieris"
