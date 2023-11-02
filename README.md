@@ -11,6 +11,17 @@ The following concepts of Haskell shall be explored:
 So what is this project about? The name __timonieris__ is a Greek word for
 "steerman", which means you should be able to orchestrate defined list of tasks. Task file is found at your home folder under **.timonieris**
 
+## Synopsis
+```
+cabal run timonieris -- <relative path to timo file>
+```
+For example
+```
+cabal run timonieris -- examples/singles.timo
+```
+
+or prepare a timo file named **.timonieris** in your home directory and simply go `cabal run timonieris`.
+
 ## Task definition syntax:
 
 Very simple! Tasks can either be executed in sequence or in parallel groups.
